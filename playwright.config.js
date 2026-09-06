@@ -68,37 +68,37 @@ module.exports = defineConfig({
     {
       name: '1-auth',
       testMatch: /login\.spec\.js/,
-      use: { ...devices['Desktop Chrome'], channel: 'chrome' },
+      use: { ...devices['Desktop Chrome'] },
       dependencies: ['setup'],
     },
     {
       name: '2-employee-create',
       testMatch: /employee-create\.spec\.js/,
-      use: { ...devices['Desktop Chrome'], channel: 'chrome', storageState: '.auth/admin.json' },
+      use: { ...devices['Desktop Chrome'], storageState: '.auth/admin.json' },
       dependencies: ['1-auth'],
     },
     {
       name: '3-employee-update',
       testMatch: /employee-update\.spec\.js/,
-      use: { ...devices['Desktop Chrome'], channel: 'chrome', storageState: '.auth/admin.json' },
+      use: { ...devices['Desktop Chrome'], storageState: '.auth/admin.json' },
       dependencies: ['2-employee-create'],
     },
     {
       name: '4-employee-delete',
       testMatch: /employee-delete\.spec\.js/,
-      use: { ...devices['Desktop Chrome'], channel: 'chrome', storageState: '.auth/admin.json' },
+      use: { ...devices['Desktop Chrome'], storageState: '.auth/admin.json' },
       dependencies: ['3-employee-update'],
     },
     {
       name: '5-role-validation',
       testMatch: /role-validation\.spec\.js/,
-      use: { ...devices['Desktop Chrome'], channel: 'chrome', storageState: '.auth/admin.json' },
+      use: { ...devices['Desktop Chrome'], storageState: '.auth/admin.json' },
       dependencies: ['4-employee-delete'],
     },
     {
       name: '6-api',
       testMatch: /employee-api\.spec\.js/,
-      use: { ...devices['Desktop Chrome'], channel: 'chrome', storageState: '.auth/admin.json' },
+      use: { ...devices['Desktop Chrome'], storageState: '.auth/admin.json' },
       dependencies: ['5-role-validation'],
     },
     // {

@@ -1,0 +1,66 @@
+# OrangeHRM E2E Automation — Azure DevOps Pipeline
+
+trigger:
+  branches:
+    include:
+      - main
+
+pr:
+  branches:
+    include:
+      - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  NODE_VERSION: '20'
+
+jobs:
+  - job: RunTests
+    displayName: 'Run All Tests'
+    timeoutInMinutes: 30
+
+    steps:
+
+      - checkout: self
+        displayName: 'Checkout code'
+
+      - task: NodeTool@0
+        displayName: 'Setup Node.js $(NODE_VERSION)'
+        inputs:
+          versionSpec: '$(NODE_VERSION)'
+
+      - script: npm install
+        displayName: 'Install dependencies'
+
+      - script: npx playwright install --with-deps chromium
+        displayName: 'Install Playwright browsers'
+
+      - script: npm run test:all
+        displayName: 'Run all tests'
+
+      - task: PublishPipelineArtifact@1
+        displayName: 'Upload Playwright report'
+        condition: always()
+        inputs:
+          targetPath: 'playwright-report'
+          artifact: 'playwright-report'
+          publishLocation: 'pipeline'
+
+      - task: PublishPipelineArtifact@1
+        displayName: 'Upload test results'
+        condition: always()
+        inputs:
+          targetPath: 'test-results'
+          artifact: 'test-results'
+          publishLocation: 'pipeline'
+
+      - task: PublishTestResults@2
+        displayName: 'Publish JUnit results to Azure Test Plans'
+        condition: always()
+        inputs:
+          testResultsFormat: 'JUnit'
+          testResultsFiles: 'reports/junit-results.xml'
+          testRunTitle: 'OrangeHRM Playwright Tests'
+          failTaskOnFailedTests: false

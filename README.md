@@ -1,143 +1,149 @@
 # OrangeHRM Automation Framework
 
-End-to-end test automation for OrangeHRM using Playwright + JavaScript.
+End-to-end test automation for [OrangeHRM](https://opensource-demo.orangehrmlive.com) using **Playwright + JavaScript**.
 
-## Architecture
+---
+
+## Project Structure
 
 ```
 orangehrm-automation/
-├── .github/workflows/       # GitHub Actions CI/CD pipelines
+├── .github/workflows/       # GitHub Actions CI/CD pipeline
 ├── config/environments/     # YAML configs per environment (dev/staging/prod)
 ├── src/
-│   ├── pages/               # Page Object Model classes
-│   ├── api/                 # API client & endpoint wrappers
-│   ├── utils/               # ConfigLoader, TestDataManager, WaitHelper, etc.
-│   └── fixtures/            # Playwright fixtures + global setup/teardown
-├── tests/
-│   ├── auth/                # Authentication tests
-│   ├── employee/            # Employee CRUD + lifecycle tests
-│   └── api/                 # API-level verification tests
+│   ├── pages/               # Page Object Model — one class per page
+│   ├── api/                 # API client and EmployeeApi wrapper
+│   ├── utils/               # ConfigLoader, WaitHelper, RetryHelper, etc.
+│   └── fixtures/            # Playwright fixtures, global setup/teardown
 ├── test-data/
-│   ├── json/                # JSON test data (employees, credentials)
-│   └── excel/               # Excel-driven test data
-└── scripts/                 # Utility scripts (generate test data)
+│   ├── employees.js         # Static employee data (comment out to skip)
+│   └── credentials.js       # Admin login credentials
+└── tests/
+    ├── auth/                # Authentication tests
+    ├── employee/            # Employee create, update, delete, role validation
+    └── api/                 # API-level verification tests
 ```
+
+---
 
 ## Prerequisites
 
 - Node.js >= 18
 - npm >= 9
-- (Optional) Allure CLI for reports: `npm install -g allure-commandline`
+- Git
 
-## Setup
+---
+
+## Setup Instructions
 
 ```bash
-# 1. Install dependencies
+# 1. Clone the repository
+git clone https://github.com/virendragupta2002/OrangeHRMTest.git
+cd OrangeHRMTest
+
+# 2. Install dependencies
 npm install
 
-# 2. Install Playwright browsers
-npx playwright install --with-deps
-
-# 3. Copy env file
-cp .env.example .env
-
-# 4. (Optional) Generate Excel test data
-npm run setup:excel
+# 3. Install Playwright browser
+npx playwright install chromium
 ```
 
-## Running Tests
+---
 
+## Execution Steps
+
+### Run all tests in correct order (recommended)
 ```bash
-# All tests (all browsers, parallel)
-npm test
+npm run test:all
+```
+Runs in this guaranteed sequence:
+`Authentication → Employee Create → Employee Update → Employee Delete → Role Validation → API Tests`
 
-# Single browser
-npm run test:chrome
-npm run test:firefox
-npm run test:edge
+### Run individual test suites
+```bash
+# Authentication tests
+npx playwright test tests/auth/
 
-# By scope
-npm run test:auth
+# Employee tests (create → update → delete in order)
 npm run test:employee
-npm run test:api
-npm run test:lifecycle
 
-# By tag
-npx playwright test --grep @smoke
-npx playwright test --grep @regression
+# API tests
+npx playwright test tests/api/
 
-# Headed (visible browser)
-npm run test:headed
-
-# Debug mode (step-through)
-npm run test:debug
-
-# Specific environment
-npm run test:staging
-
-# With retry override
-npx playwright test --retries=3
+# Single test file
+npx playwright test tests/employee/employee-create.spec.js --headed
 ```
 
-## Reports
-
+### View the report after running
 ```bash
-# Playwright HTML report (auto-opens after run)
-npm run report
-
-# Allure report
-npm run allure:generate
-npm run allure:open
-
-# Allure live server
-npm run allure:serve
+npx playwright show-report
 ```
 
-## Test Tags
+---
 
-| Tag         | Description                              |
-|-------------|------------------------------------------|
-| `@smoke`    | Critical path, fast — run on every push  |
-| `@regression` | Full suite — run on PRs and nightly    |
-| `@api`      | API-only tests                           |
+## Test Coverage
 
-## Flaky Test Strategy
+| File | Tests | Description |
+|------|-------|-------------|
+| `login.spec.js` | 5 | Login page, valid/invalid credentials, session, forgot password |
+| `employee-create.spec.js` | 1 | Create employee and verify in PIM list |
+| `employee-update.spec.js` | 2 | Update mobile and work email via name search |
+| `employee-delete.spec.js` | 2 | Delete by name search and by employee ID |
+| `role-validation.spec.js` | 2 | Assign ESS role, verify role in User Management |
+| `employee-api.spec.js` | 3 | Authenticated API access, employee list structure |
 
-### Detection
-- Playwright's built-in retry records a test as **flaky** when it fails on attempt 1 but passes on retry.
-- Allure report's **Flaky** category surfaces these automatically.
-- CI reports include `--reporter=junit` XML for trend tracking in tools like Jira Xray.
+---
 
-### Mitigation
-1. **Smart waits** — `WaitHelper` uses `waitForSelector`, `waitForResponse`, `waitForURL` instead of `page.waitForTimeout`.
-2. **Retry logic** — `RetryHelper.retry()` wraps flaky interactions (clicks, fills, navigation) with exponential backoff.
-3. **Stable locators** — selectors target semantic attributes (`name`, `type`, `role`, `placeholder`) not CSS classes that change on redeploy.
-4. **Test isolation** — each test creates its own data and cleans up; no shared state between tests.
-5. **Network intercept** — `waitForApiResponse()` ensures UI updates only after the network call resolves.
-6. **Spinner guard** — `waitForSpinnerToDisappear()` called after every navigation and save.
+## Key Design Decisions
+
+### 1. Page Object Model (POM)
+Every page has its own class in `src/pages/`. Tests never interact with the browser directly — they call page methods. This means if OrangeHRM changes a selector, only one file needs updating.
+
+### 2. BasePage with `_loc()` helper
+`BasePage` provides `click()`, `fill()`, `isVisible()` etc. that accept both CSS selector strings AND Playwright `getBy*` Locator objects. All shared waiting and scrolling logic lives here once.
+
+### 3. Static test data over random data
+Replaced `faker` library with a static `employees.js` file. Entries can be commented out with `//` to skip specific employees. Sequential index ensures create → update → delete always operate on the same person.
+
+### 4. storageState for authentication
+Global setup logs in once and saves the session to `.auth/admin.json`. All tests reuse this session automatically — no per-test login needed. Auth tests override this with `test.use({ storageState: {} })` to start unauthenticated.
+
+### 5. Project dependencies for test ordering
+Playwright's project `dependencies` feature enforces `create → update → delete` order at the framework level — not via command-line flags that can be forgotten.
+
+### 6. Graceful skip over failure
+Update and delete tests skip (not fail) when no matching employee is found: `test.skip(true, "No records found")`. This handles the shared demo site where data changes between runs.
+
+### 7. getByRole / getByPlaceholder locators
+Migrated from brittle CSS class selectors to semantic Playwright locators where supported. OrangeHRM's custom Vue components (`oxd-label`) don't support ARIA associations, so those fields keep CSS selectors.
+
+---
 
 ## CI/CD Pipeline
 
-The GitHub Actions workflow runs:
-1. **Install** — caches browsers and `node_modules`
-2. **Smoke** — Chrome only, fast gate on every push
-3. **Regression** — Chrome, Firefox, Edge in parallel (on PRs and schedule)
-4. **Allure Report** — merges all results, deploys to GitHub Pages on `main`
+GitHub Actions runs automatically on every push to `main`:
 
-### Secrets Required
+```
+Push to main
+    ↓
+Install Node.js + dependencies
+    ↓
+Install Playwright (chromium)
+    ↓
+npm run test:all
+    ↓
+Upload Playwright report as artifact
+```
 
-| Secret           | Description           |
-|------------------|-----------------------|
-| `ADMIN_USERNAME` | OrangeHRM admin user  |
-| `ADMIN_PASSWORD` | OrangeHRM admin pass  |
+Download the test report from the **Actions** tab → select a run → **Artifacts**.
 
-## Data-Driven Testing
-
-- **JSON** (`test-data/json/employees.json`) — static datasets for consistent regression runs
-- **Excel** (`test-data/excel/test-data.xlsx`) — generated via `npm run setup:excel`, read via `ExcelHelper`
-- **Faker** — `TestDataManager.generateEmployee()` creates unique runtime data to avoid conflicts
+---
 
 ## Environment Configuration
 
-Edit `config/environments/<env>.yaml` to change base URLs, timeouts, and retry counts per environment.
-Sensitive values use `${ENV_VAR}` interpolation resolved at runtime from the shell or `.env`.
+Edit `config/environments/dev.yaml` to change base URLs and timeouts.
+
+| Environment | Command |
+|---|---|
+| dev (default) | `npm run test:all` |
+| staging | `ENVIRONMENT=staging npm run test:all` |

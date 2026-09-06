@@ -2,244 +2,48 @@ name: OrangeHRM E2E Automation
 
 on:
   push:
-    branches: [main, develop, 'feature/**']
+    branches: [main]
   pull_request:
-    branches: [main, develop]
-  schedule:
-    - cron: '0 6 * * 1-5'
+    branches: [main]
   workflow_dispatch:
-    inputs:
-      environment:
-        description: 'Target environment'
-        required: true
-        default: 'dev'
-        type: choice
-        options: [dev, staging]
-      browser:
-        description: 'Browser(s) to run'
-        required: false
-        default: 'all'
-        type: choice
-        options: [all, chromium, firefox, edge]
-      tags:
-        description: 'Test tags to run (e.g. @smoke)'
-        required: false
-        default: ''
-
-env:
-  NODE_VERSION: '20'
-  ENVIRONMENT: ${{ github.event.inputs.environment || 'dev' }}
 
 jobs:
-  install:
-    name: Install & Cache
+  test:
+    name: Run All Tests
     runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+    timeout-minutes: 30
 
-      - name: Use Node.js ${{ env.NODE_VERSION }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: '20'
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
-
-      - name: Cache Playwright browsers
-        id: cache-browsers
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+        run: npm install
 
       - name: Install Playwright browsers
-        if: steps.cache-browsers.outputs.cache-hit != 'true'
-        run: npx playwright install --with-deps
+        run: npx playwright install --with-deps chromium
 
-      - name: Install Playwright deps only
-        if: steps.cache-browsers.outputs.cache-hit == 'true'
-        run: npx playwright install-deps
+      - name: Run all tests
+        run: npm run test:all
 
-  smoke-tests:
-    name: Smoke Tests
-    needs: install
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-      - run: npm ci
-      - name: Restore Playwright cache
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-      - run: npx playwright install-deps
-
-      - name: Run Smoke Tests
-        env:
-          ENVIRONMENT: ${{ env.ENVIRONMENT }}
-          ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME || 'Admin' }}
-          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD || 'admin123' }}
-        run: npx playwright test --grep @smoke --project=chromium
-
-      - uses: actions/upload-artifact@v3
+      - name: Upload Playwright report
         if: always()
+        uses: actions/upload-artifact@v4
         with:
-          name: smoke-results
-          path: |
-            allure-results/
-            test-results/
+          name: playwright-report
+          path: playwright-report/
           retention-days: 7
 
-  regression-chromium:
-    name: Regression - Chrome
-    needs: smoke-tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-      - run: npm ci
-      - name: Restore Playwright cache
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-      - run: npx playwright install-deps
-
-      - name: Run Regression - Chrome
-        env:
-          ENVIRONMENT: ${{ env.ENVIRONMENT }}
-          ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME || 'Admin' }}
-          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD || 'admin123' }}
-        run: npx playwright test --project=chromium
-
-      - uses: actions/upload-artifact@v3
+      - name: Upload test results
         if: always()
+        uses: actions/upload-artifact@v4
         with:
-          name: chromium-results
-          path: |
-            allure-results/
-            test-results/
-            playwright-report/
-          retention-days: 14
-
-  regression-firefox:
-    name: Regression - Firefox
-    needs: smoke-tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    if: ${{ github.event.inputs.browser == 'all' || github.event.inputs.browser == 'firefox' || github.event_name != 'workflow_dispatch' }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-      - run: npm ci
-      - name: Restore Playwright cache
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-      - run: npx playwright install-deps
-
-      - name: Run Regression - Firefox
-        env:
-          ENVIRONMENT: ${{ env.ENVIRONMENT }}
-          ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME || 'Admin' }}
-          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD || 'admin123' }}
-        run: npx playwright test --project=firefox
-
-      - uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: firefox-results
-          path: |
-            allure-results/
-            test-results/
-          retention-days: 14
-
-  regression-edge:
-    name: Regression - Edge
-    needs: smoke-tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-    if: ${{ github.event.inputs.browser == 'all' || github.event.inputs.browser == 'edge' || github.event_name != 'workflow_dispatch' }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-      - run: npm ci
-      - name: Restore Playwright cache
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
-      - run: npx playwright install-deps
-
-      - name: Run Regression - Edge
-        env:
-          ENVIRONMENT: ${{ env.ENVIRONMENT }}
-          ADMIN_USERNAME: ${{ secrets.ADMIN_USERNAME || 'Admin' }}
-          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD || 'admin123' }}
-        run: npx playwright test --project=edge
-
-      - uses: actions/upload-artifact@v3
-        if: always()
-        with:
-          name: edge-results
-          path: |
-            allure-results/
-            test-results/
-          retention-days: 14
-
-  allure-report:
-    name: Generate Allure Report
-    needs: [regression-chromium, regression-firefox, regression-edge]
-    runs-on: ubuntu-latest
-    if: always()
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Download all artifacts
-        uses: actions/download-artifact@v3
-        with:
-          path: artifacts/
-
-      - name: Merge allure results
-        run: |
-          mkdir -p allure-results
-          find artifacts/ -name "*.json" -path "*/allure-results/*" -exec cp {} allure-results/ \;
-          find artifacts/ -name "*.xml" -path "*/allure-results/*" -exec cp {} allure-results/ \;
-
-      - name: Install Allure CLI
-        run: npm install -g allure-commandline
-
-      - name: Generate Allure Report
-        run: allure generate allure-results --clean -o allure-report
-
-      - name: Upload Allure Report
-        uses: actions/upload-artifact@v3
-        with:
-          name: allure-report
-          path: allure-report/
-          retention-days: 30
-
-      - name: Deploy to GitHub Pages
-        if: github.ref == 'refs/heads/main'
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./allure-report
-          destination_dir: reports
+          name: test-results
+          path: test-results/
+          retention-days: 7

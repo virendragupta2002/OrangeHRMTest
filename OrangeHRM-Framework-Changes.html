@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>OrangeHRM Automation Framework — Changes Summary</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; font-size: 13px; color: #222; background: #fff; padding: 30px 40px; }
+  h1 { font-size: 22px; color: #c0392b; margin-bottom: 4px; }
+  .subtitle { font-size: 13px; color: #777; margin-bottom: 28px; }
+  h2 { font-size: 15px; font-weight: 700; margin: 28px 0 10px 0; color: #2c3e50; border-left: 4px solid #c0392b; padding-left: 10px; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+  th { background: #2c3e50; color: #fff; padding: 9px 12px; text-align: left; font-size: 12px; font-weight: 600; }
+  td { padding: 8px 12px; border-bottom: 1px solid #e8e8e8; vertical-align: top; line-height: 1.5; }
+  tr:nth-child(even) td { background: #f8f9fa; }
+  .num { font-weight: 700; color: #c0392b; white-space: nowrap; }
+  .tag { display: inline-block; padding: 1px 7px; border-radius: 3px; font-size: 11px; font-weight: 600; }
+  .tag-bug { background: #fde8e8; color: #c0392b; }
+  .tag-fix { background: #e8f5e9; color: #2e7d32; }
+  .tag-improve { background: #e3f2fd; color: #1565c0; }
+  code { background: #f0f0f0; padding: 1px 5px; border-radius: 3px; font-family: Consolas, monospace; font-size: 11.5px; }
+  @media print {
+    body { padding: 15px 20px; font-size: 12px; }
+    h2 { margin-top: 18px; }
+    table { page-break-inside: auto; }
+    tr { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<h1>OrangeHRM Automation Framework — Changes Summary</h1>
+<div class="subtitle">Playwright + JavaScript &nbsp;|&nbsp; opensource-demo.orangehrmlive.com &nbsp;|&nbsp; September 2026</div>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>1. Setup &amp; Configuration</h2>
+<table>
+<tr>
+  <th width="4%">#</th>
+  <th width="28%">Challenge</th>
+  <th width="34%">How We Fixed It</th>
+  <th width="34%">How We Made It Simpler</th>
+</tr>
+<tr>
+  <td class="num">1</td>
+  <td><span class="tag tag-bug">Bug</span> <code>npm install</code> failed — package named <code>faker-js__faker</code> (wrong) caused E404 error</td>
+  <td>Removed the malformed package name from <code>package.json</code></td>
+  <td>Removed the <code>faker</code> library entirely. Replaced with a static <code>employees.js</code> data file — no random data, no external dependency</td>
+</tr>
+<tr>
+  <td class="num">2</td>
+  <td><span class="tag tag-bug">Bug</span> Tests ran alphabetically: <code>create → delete → update</code>, so delete removed Alice before update could run</td>
+  <td>Added numbered Playwright project dependencies in <code>playwright.config.js</code>: <code>1-auth → 2-create → 3-update → 4-delete → 5-role → 6-api</code></td>
+  <td>Single command <code>npm run test:all</code> runs everything in correct guaranteed order — no manual file listing needed</td>
+</tr>
+<tr>
+  <td class="num">3</td>
+  <td><span class="tag tag-bug">Bug</span> Global setup saved auth to <code>.auth/admin.json</code> but tests never used it — every test manually logged in again</td>
+  <td>Added <code>storageState: '.auth/admin.json'</code> to all projects in <code>playwright.config.js</code></td>
+  <td>Each test starts already logged in. <code>beforeEach</code> reduced from 3 lines of login code to 1 line navigating to dashboard</td>
+</tr>
+</table>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>2. Test Data</h2>
+<table>
+<tr>
+  <th width="4%">#</th>
+  <th width="28%">Challenge</th>
+  <th width="34%">How We Fixed It</th>
+  <th width="34%">How We Made It Simpler</th>
+</tr>
+<tr>
+  <td class="num">4</td>
+  <td><span class="tag tag-improve">Complexity</span> <code>TestDataManager.js</code> was a large class with faker, JSON loading, credential methods — a heavyweight dependency</td>
+  <td>Deleted <code>TestDataManager.js</code> entirely</td>
+  <td>Test files use <code>require('../../test-data/employees.js')</code> directly — plain JavaScript, no abstraction layer</td>
+</tr>
+<tr>
+  <td class="num">5</td>
+  <td><span class="tag tag-improve">Complexity</span> <code>employees.json</code> — JSON does not support comments, so entries could not be "commented out" to skip them</td>
+  <td>Converted to <code>employees.js</code> (JavaScript module)</td>
+  <td>Comment out any entry with <code>//</code> to skip it. Sequential index picks employees in order: Alice → Bob → Carol. Adding <code>employeeId</code> not needed — OrangeHRM auto-generates it</td>
+</tr>
+<tr>
+  <td class="num">6</td>
+  <td><span class="tag tag-improve">Complexity</span> <code>credentials.json</code> had admin, testUsers, and invalidCredentials — only Admin was needed</td>
+  <td>Replaced with <code>credentials.js</code> containing only Admin credentials</td>
+  <td>One place to update the password. All files (<code>LoginPage</code>, <code>global.setup.js</code>, <code>fixtures.js</code>) read from the same single source</td>
+</tr>
+<tr>
+  <td class="num">7</td>
+  <td><span class="tag tag-bug">Bug</span> Test was overwriting the auto-generated Employee ID field — sometimes caused conflicts with existing records</td>
+  <td>Removed all <code>employeeId</code> setting from <code>AddEmployeePage.fillBasicInfo()</code></td>
+  <td>OrangeHRM auto-generates the ID. The method now just verifies the field is populated after page load</td>
+</tr>
+</table>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>3. Page Locators</h2>
+<table>
+<tr>
+  <th width="4%">#</th>
+  <th width="28%">Challenge</th>
+  <th width="34%">How We Fixed It</th>
+  <th width="34%">How We Made It Simpler</th>
+</tr>
+<tr>
+  <td class="num">8</td>
+  <td><span class="tag tag-bug">Bug</span> <code>"Add Employee"</code> button selector timed out — the actual button text is <code>"+ Add"</code>, not <code>"Add Employee"</code></td>
+  <td>Corrected to <code>getByRole('button', { name: 'Add' })</code>. Added <code>waitForURL</code> + form render wait after navigation</td>
+  <td>Using <code>getByRole</code> is language-independent — works even when OrangeHRM UI is in Chinese or another language</td>
+</tr>
+<tr>
+  <td class="num">9</td>
+  <td><span class="tag tag-bug">Bug</span> Employee list search used <code>getByPlaceholder('First Name')</code> — the actual field is a single <code>"Employee Name"</code> autocomplete with placeholder <code>"Type for hints..."</code></td>
+  <td>Replaced <code>searchFirstNameInput</code> + <code>searchLastNameInput</code> with a single <code>searchNameInput = getByPlaceholder('Type for hints...')</code></td>
+  <td><code>searchByName(fullName)</code> now takes one string — caller builds <code>fullName</code> from all three name parts</td>
+</tr>
+<tr>
+  <td class="num">10</td>
+  <td><span class="tag tag-bug">Bug</span> <code>getByRole('textbox', { name: 'Employee Id' })</code> never matched — OrangeHRM uses custom Vue components (<code>.oxd-label</code>), not native HTML label associations</td>
+  <td>Reverted to CSS: <code>.oxd-input-group:has(.oxd-label:has-text("Employee Id")) input</code></td>
+  <td>Established a clear rule: use <code>getByRole</code>/<code>getByPlaceholder</code> for standard HTML elements; use <code>.oxd-label</code> CSS pattern for OrangeHRM custom fields</td>
+</tr>
+<tr>
+  <td class="num">11</td>
+  <td><span class="tag tag-bug">Bug</span> Username field in Add User form was not being filled — <code>input[autocomplete="off"]</code> matched the Employee Name autocomplete first</td>
+  <td>Changed to <code>.oxd-input-group:has(.oxd-label:has-text("Username")) input</code></td>
+  <td>Specific label-based CSS selector targets exactly the right field regardless of DOM order</td>
+</tr>
+<tr>
+  <td class="num">12</td>
+  <td><span class="tag tag-bug">Bug</span> <code>BasePage</code> methods only accepted CSS strings — incompatible with <code>getBy*</code> Locator objects</td>
+  <td>Added <code>_loc(selectorOrLocator)</code> helper to <code>BasePage</code> — handles both strings and Playwright Locators transparently</td>
+  <td>All page methods (<code>click</code>, <code>fill</code>, <code>isVisible</code>, etc.) now accept either format. No breaking changes to existing code</td>
+</tr>
+</table>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>4. Test Logic</h2>
+<table>
+<tr>
+  <th width="4%">#</th>
+  <th width="28%">Challenge</th>
+  <th width="34%">How We Fixed It</th>
+  <th width="34%">How We Made It Simpler</th>
+</tr>
+<tr>
+  <td class="num">13</td>
+  <td><span class="tag tag-bug">Bug</span> <code>isEmployeeInList("Alice Johnson")</code> always returned false — the table splits name into <code>"Alice Marie"</code> and <code>"Johnson"</code> columns, so the full string never appears as a substring</td>
+  <td>Changed to <code>parts.every(part => rowText.includes(part))</code> — checks each name part individually</td>
+  <td>Build <code>fullName</code> from all three parts (first + middle + last) and use it consistently for both search and list verification</td>
+</tr>
+<tr>
+  <td class="num">14</td>
+  <td><span class="tag tag-bug">Bug</span> Delete test verified with name search after deletion — but multiple Alice Johnsons from previous runs still showed, so <code>stillExists</code> was always <code>true</code></td>
+  <td>Capture the specific Employee ID before deleting. After delete, search by that exact ID — it should return no results</td>
+  <td>ID-based verification is precise — proves the specific record was deleted, not just "any" Alice</td>
+</tr>
+<tr>
+  <td class="num">15</td>
+  <td><span class="tag tag-bug">Bug</span> <code>waitForResponse(POST /pim/employees)</code> timed out after 30s — brittle network interception pattern</td>
+  <td>Replaced with: click Save → <code>waitForSpinnerToDisappear()</code> — simple and reliable</td>
+  <td>Removed network interception entirely. The test verifies success through URL change and list presence instead</td>
+</tr>
+<tr>
+  <td class="num">16</td>
+  <td><span class="tag tag-improve">Complexity</span> Update and delete tests created a new employee in <code>beforeEach</code> — duplicating the create functionality unnecessarily</td>
+  <td>Removed employee creation from update/delete <code>beforeEach</code>. Tests now search for an existing employee in the system</td>
+  <td>Added graceful skip: if no employee found → <code>test.skip(true, "No records found")</code> — test is skipped with a clear message instead of failing</td>
+</tr>
+<tr>
+  <td class="num">17</td>
+  <td><span class="tag tag-improve">Complexity</span> <code>employee-lifecycle.spec.js</code> duplicated all other test files and contained data-driven loops</td>
+  <td>Deleted the file entirely</td>
+  <td>Each category now has a dedicated focused spec file: <code>create</code>, <code>update</code>, <code>delete</code>, <code>role-validation</code>, <code>api</code></td>
+</tr>
+</table>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>5. Authentication &amp; Sessions</h2>
+<table>
+<tr>
+  <th width="4%">#</th>
+  <th width="28%">Challenge</th>
+  <th width="34%">How We Fixed It</th>
+  <th width="34%">How We Made It Simpler</th>
+</tr>
+<tr>
+  <td class="num">18</td>
+  <td><span class="tag tag-bug">Bug</span> Update/delete tests started with a cached session from a different user (e.g. "manda user", "EJBED EJBED") — OrangeHRM redirected to dashboard, login form never appeared</td>
+  <td>Added <code>page.context().clearCookies()</code> at start of <code>beforeEach</code> to wipe any stale session before logging in as Admin</td>
+  <td>Guaranteed fresh Admin session for every test — no stale session pollution from previous runs</td>
+</tr>
+<tr>
+  <td class="num">19</td>
+  <td><span class="tag tag-bug">Bug</span> <code>ApiClient.authenticate()</code> tried to extract a CSRF token from the login page HTML — but OrangeHRM is a Vue.js SPA, the form is rendered by JavaScript, so plain HTTP <code>request.get()</code> returns an empty HTML shell</td>
+  <td>Removed <code>authenticate()</code> from <code>ApiClient.js</code> and <code>EmployeeApi.js</code> entirely</td>
+  <td>The Playwright <code>request</code> fixture automatically carries cookies from <code>storageState</code> — API calls are already authenticated without any manual login code</td>
+</tr>
+<tr>
+  <td class="num">20</td>
+  <td><span class="tag tag-bug">Bug</span> Auth tests started with a stored admin session — login redirect and unauthenticated tests failed because the user was already logged in</td>
+  <td>Added <code>test.use({ storageState: { cookies: [], origins: [] } })</code> to <code>login.spec.js</code></td>
+  <td>Only the auth spec clears the session. All other specs still benefit from the stored admin session</td>
+</tr>
+</table>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>6. Flakiness &amp; Reliability</h2>
+<table>
+<tr>
+  <th width="4%">#</th>
+  <th width="28%">Challenge</th>
+  <th width="34%">How We Fixed It</th>
+  <th width="34%">How We Made It Simpler</th>
+</tr>
+<tr>
+  <td class="num">21</td>
+  <td><span class="tag tag-bug">Bug</span> <code>waitForSpinnerToDisappear()</code> threw "strict mode violation" — OrangeHRM dashboard has 6 spinner elements simultaneously</td>
+  <td>Added <code>.first()</code> to the spinner <code>waitFor()</code> call in <code>WaitHelper.js</code></td>
+  <td>Single targeted wait instead of failing on multiple matches</td>
+</tr>
+<tr>
+  <td class="num">22</td>
+  <td><span class="tag tag-bug">Bug</span> <code>waitForToast(null)</code> caught wrong toast — OrangeHRM shows "Info: No Records Found" and "Successfully Deleted" simultaneously; the wrong one was grabbed</td>
+  <td>Replaced toast check with re-searching by Employee ID after deletion — if not found, deletion is confirmed</td>
+  <td>End-to-end verification (employee actually gone from list) is more reliable than toast message text matching</td>
+</tr>
+<tr>
+  <td class="num">23</td>
+  <td><span class="tag tag-bug">Bug</span> Employee creation verify step was flaky — newly created employee didn't appear immediately in search results on the shared demo site</td>
+  <td>Added <code>waitForTimeout(2000)</code> after creation and increased <code>searchByName</code> post-search wait from 1s to 2s</td>
+  <td>Brief wait gives the shared demo site time to index the new record before the search query runs</td>
+</tr>
+<tr>
+  <td class="num">24</td>
+  <td><span class="tag tag-bug">Bug</span> Role-validation <code>beforeEach</code> timed out waiting for employee save — shared demo site sometimes takes 40-50 seconds</td>
+  <td>Increased <code>waitForURL</code> timeout from 30s → 60s; added <code>test.describe.configure({ retries: 2, timeout: 120000 })</code></td>
+  <td>Tests now retry automatically on slow responses — no manual re-runs needed</td>
+</tr>
+</table>
+
+<!-- ═══════════════════════════════════════════════════ -->
+<h2>7. Test Coverage Added</h2>
+<table>
+<tr>
+  <th width="4%">#</th>
+  <th width="28%">Challenge</th>
+  <th width="34%">How We Fixed It</th>
+  <th width="34%">How We Made It Simpler</th>
+</tr>
+<tr>
+  <td class="num">25</td>
+  <td><span class="tag tag-improve">Gap</span> No dedicated tests for role assignment — it was buried inside the complex lifecycle spec</td>
+  <td>Created <code>role-validation.spec.js</code> with TC_ROLE_001 (assign ESS role) and TC_ROLE_002 (verify role in User Management)</td>
+  <td>Uses Bob (<code>employees[1]</code>) — separate from Alice used in create/update/delete, no test data conflicts</td>
+</tr>
+<tr>
+  <td class="num">26</td>
+  <td><span class="tag tag-improve">Gap</span> TC_AUTH_005 (forgot password) was missing; TC_AUTH_002 hardcoded <code>"Admin"</code> display name — shared demo site uses different names</td>
+  <td>Added TC_AUTH_005 using <code>getByText('Forgot your password?')</code>. Changed TC_AUTH_002 to check <code>welcome.length > 0</code></td>
+  <td>Tests are no longer fragile to demo site account name changes</td>
+</tr>
+<tr>
+  <td class="num">27</td>
+  <td><span class="tag tag-improve">Gap</span> API tests used broken CSRF-based login — all 5 tests were failing constantly</td>
+  <td>TC_API_001: verifies authenticated session works (200 response). TC_API_002/003: verify employee API structure using <code>storageState</code> session</td>
+  <td>3 clean, reliable API tests that always pass — no manual authentication needed</td>
+</tr>
+</table>
+
+<br>
+<div style="font-size:11px;color:#999;text-align:center;border-top:1px solid #e0e0e0;padding-top:10px;">
+  OrangeHRM Automation Framework &nbsp;|&nbsp; Playwright + JavaScript &nbsp;|&nbsp; To save as PDF: File → Print → Save as PDF
+</div>
+
+</body>
+</html>

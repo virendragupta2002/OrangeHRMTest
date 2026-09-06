@@ -1,0 +1,48 @@
+{
+  "name": "orangehrm-automation",
+  "version": "1.0.0",
+  "description": "OrangeHRM End-to-End Automation Framework using Playwright",
+  "scripts": {
+    "test": "playwright test",
+    "test:chrome": "playwright test --project=chromium",
+    "test:firefox": "playwright test --project=firefox",
+    "test:edge": "playwright test --project=edge",
+    "test:auth": "playwright test tests/auth/",
+    "test:employee": "playwright test tests/employee/employee-create.spec.js tests/employee/employee-update.spec.js tests/employee/employee-delete.spec.js --project=chromium --workers=1",
+    "test:all": "playwright test",
+    "test:api": "playwright test tests/api/",
+    "test:lifecycle": "playwright test tests/employee/employee-lifecycle.spec.js",
+    "test:smoke": "playwright test --grep @smoke",
+    "test:regression": "playwright test --grep @regression",
+    "test:staging": "ENVIRONMENT=staging playwright test",
+    "test:prod": "ENVIRONMENT=prod playwright test",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "allure:generate": "allure generate allure-results --clean -o allure-report",
+    "allure:open": "allure open allure-report",
+    "allure:serve": "allure serve allure-results",
+    "report": "playwright show-report",
+    "codegen": "playwright codegen https://opensource-demo.orangehrmlive.com",
+    "lint": "eslint src tests --ext .js",
+    "lint:fix": "eslint src tests --ext .js --fix",
+    "setup:excel": "node scripts/generate-test-data.js",
+    "clean": "rimraf allure-results allure-report test-results playwright-report"
+  },
+  "dependencies": {
+    "js-yaml": "^4.1.0",
+    "exceljs": "^4.4.0",
+    "dotenv": "^16.3.1",
+    "uuid": "^9.0.0",
+    "axios": "^1.6.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0",
+    "allure-playwright": "^2.10.0",
+    "allure-commandline": "^2.24.0",
+    "eslint": "^8.55.0",
+    "rimraf": "^5.0.5"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

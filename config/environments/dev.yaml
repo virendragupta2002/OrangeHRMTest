@@ -1,0 +1,32 @@
+environment: dev
+baseUrl: https://opensource-demo.orangehrmlive.com
+apiBaseUrl: https://opensource-demo.orangehrmlive.com/web/index.php/api/v2
+
+credentials:
+  admin:
+    username: Admin
+    password: admin123
+
+timeouts:
+  default: 30000
+  navigation: 30000
+  element: 15000
+  api: 10000
+
+retry:
+  maxRetries: 2
+  retryDelay: 1000
+
+paths:
+  login: /web/index.php/auth/login
+  dashboard: /web/index.php/dashboard/index
+  pim: /web/index.php/pim/viewEmployeeList
+  addEmployee: /web/index.php/pim/addEmployee
+  userManagement: /web/index.php/admin/viewSystemUsers
+
+parallel:
+  workers: 2
+  fullyParallel: true
+
+database:
+  enabled: false

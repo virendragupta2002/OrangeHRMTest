@@ -1,0 +1,59 @@
+<testsuites id="" name="" tests="14" failures="0" skipped="0" errors="0" time="195.335885">
+<testsuite name="auth\login.spec.js" timestamp="2026-09-05T19:20:02.458Z" hostname="1-auth" tests="5" failures="0" skipped="0" time="41.06" errors="0">
+<testcase name="@smoke @regression Authentication › TC_AUTH_001 - Login page renders required elements" classname="auth\login.spec.js" time="7.922">
+</testcase>
+<testcase name="@smoke @regression Authentication › TC_AUTH_002 - Admin login with valid credentials" classname="auth\login.spec.js" time="10.531">
+</testcase>
+<testcase name="@smoke @regression Authentication › TC_AUTH_003 - Login fails with invalid credentials" classname="auth\login.spec.js" time="6.876">
+</testcase>
+<testcase name="@smoke @regression Authentication › TC_AUTH_004 - Session persists on page refresh" classname="auth\login.spec.js" time="10.293">
+</testcase>
+<testcase name="@smoke @regression Authentication › TC_AUTH_005 - Forgot your password button navigates to reset page" classname="auth\login.spec.js" time="5.438">
+</testcase>
+</testsuite>
+<testsuite name="employee\employee-create.spec.js" timestamp="2026-09-05T19:20:02.458Z" hostname="2-employee-create" tests="1" failures="0" skipped="0" time="20.358" errors="0">
+<testcase name="@regression Employee Creation › TC_EMP_CREATE_001 - Create new employee" classname="employee\employee-create.spec.js" time="20.358">
+</testcase>
+</testsuite>
+<testsuite name="employee\employee-update.spec.js" timestamp="2026-09-05T19:20:02.458Z" hostname="3-employee-update" tests="2" failures="0" skipped="0" time="48.192" errors="0">
+<testcase name="@regression Employee Update › TC_EMP_UPDATE_001 - Update mobile number of employee found by name search" classname="employee\employee-update.spec.js" time="21.74">
+</testcase>
+<testcase name="@regression Employee Update › TC_EMP_UPDATE_002 - Update work email of employee found by name search" classname="employee\employee-update.spec.js" time="26.452">
+</testcase>
+</testsuite>
+<testsuite name="employee\employee-delete.spec.js" timestamp="2026-09-05T19:20:02.458Z" hostname="4-employee-delete" tests="1" failures="0" skipped="0" time="21.573" errors="0">
+<testcase name="@regression Employee Deletion › TC_EMP_DELETE_001 - Delete employee by name search" classname="employee\employee-delete.spec.js" time="21.573">
+</testcase>
+</testsuite>
+<testsuite name="employee\role-validation.spec.js" timestamp="2026-09-05T19:20:02.458Z" hostname="5-role-validation" tests="2" failures="0" skipped="0" time="105.928" errors="0">
+<testcase name="@regression Role-Based Validation › TC_ROLE_001 - Admin can assign ESS role to an employee" classname="employee\role-validation.spec.js" time="31.567">
+</testcase>
+<testcase name="@regression Role-Based Validation › TC_ROLE_002 - Assigned ESS role appears correctly in User Management" classname="employee\role-validation.spec.js" time="74.361">
+<system-out>
+<![CDATA[
+[[ATTACHMENT|..\test-results\employee-role-validation---81793-orrectly-in-User-Management-5-role-validation\test-failed-1.png]]
+
+[[ATTACHMENT|..\test-results\employee-role-validation---81793-orrectly-in-User-Management-5-role-validation\attachments\failure-screenshot-5c5eaad453bd7755408ad7e60164fe98535f00ed.png]]
+
+[[ATTACHMENT|..\test-results\employee-role-validation---81793-orrectly-in-User-Management-5-role-validation\video.webm]]
+
+[[ATTACHMENT|..\test-results\employee-role-validation---81793-orrectly-in-User-Management-5-role-validation\error-context.md]]
+
+[[ATTACHMENT|..\test-results\employee-role-validation---81793-orrectly-in-User-Management-5-role-validation\trace.zip]]
+]]>
+</system-out>
+<system-err>
+<![CDATA[[Screenshot] Failure captured: D:\orangehrm-automation\orangehrm-automation\test-results\screenshots\failures\FAIL_TC_ROLE_002_-_Assigned_ESS_role_appears_correctly_in_User_Management_1788636144118.png
+]]>
+</system-err>
+</testcase>
+</testsuite>
+<testsuite name="api\employee-api.spec.js" timestamp="2026-09-05T19:20:02.458Z" hostname="6-api" tests="3" failures="0" skipped="0" time="7.702" errors="0">
+<testcase name="@regression @api Employee API Verification › TC_API_001 - Successful login allows authenticated access to employee API" classname="api\employee-api.spec.js" time="3.163">
+</testcase>
+<testcase name="@regression @api Employee API Verification › TC_API_002 - GET /pim/employees returns 200 with data array" classname="api\employee-api.spec.js" time="2.969">
+</testcase>
+<testcase name="@regression @api Employee API Verification › TC_API_003 - GET /pim/employees includes meta total count" classname="api\employee-api.spec.js" time="1.57">
+</testcase>
+</testsuite>
+</testsuites>

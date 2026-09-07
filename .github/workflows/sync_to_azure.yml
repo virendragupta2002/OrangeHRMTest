@@ -19,5 +19,5 @@ jobs:
           AZURE_DEVOPS_PAT: ${{ secrets.AZURE_DEVOPS_PAT }}
         run: |
           git remote add azure https://anyuser:${AZURE_DEVOPS_PAT}@dev.azure.com/veergofficial2094/OrangeHRM/_git/OrangeHRM
-          git push azure --all
-          git push azure --tags
+          git push azure --all --force
+          git push azure --tags --force

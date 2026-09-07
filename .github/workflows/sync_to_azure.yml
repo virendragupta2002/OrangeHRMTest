@@ -1,0 +1,23 @@
+name: Sync to Azure Repos
+ 
+on:
+  push:
+    branches:
+      - main   # change or add branches you want mirrored
+ 
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history, not just latest commit
+ 
+      - name: Push to Azure Repos
+        env:
+          AZURE_DEVOPS_PAT: ${{ secrets.AZURE_DEVOPS_PAT }}
+        run: |
+          git remote add azure https://anyuser:${AZURE_DEVOPS_PAT}@dev.azure.com/<org>/<project>/_git/<repo>
+          git push azure --all
+          git push azure --tags
